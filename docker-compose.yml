@@ -20,7 +20,7 @@ services:
       - "--metrics.prometheus.buckets=0.1,0.3,1.2,5.0"
       - "--docker"
       - "--docker.swarmMode=false"
-      - "--docker.domain=docker.localhost"
+      - "--docker.domain=docker.192.168.1.196.nip.io"
       - "--docker.watch"
     networks:
       - traefik
