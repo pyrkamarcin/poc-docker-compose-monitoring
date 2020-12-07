@@ -21,7 +21,7 @@ services:
       - "--metrics"
       - "--metrics.prometheus.buckets=0.1,0.3,1.2,5.0"
       - "--docker"
-      - "--docker.swarmMode"
+      - "--docker.swarmMode=false"
       - "--docker.domain=docker.localhost"
       - "--docker.watch"
     networks:
