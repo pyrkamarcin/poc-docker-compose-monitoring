@@ -41,7 +41,7 @@ services:
 
   prometheus:
     labels:
-      traefik.http.routers.prometheus.rule: Host(`prometheus.192.168.1.196`)
+      traefik.http.routers.prometheus.rule: Host(`prometheus.192.168.1.196.nip.io`)
     image: prom/prometheus
     volumes:
       - ./prometheus/:/etc/prometheus/
@@ -84,7 +84,7 @@ services:
 
   grafana:
     labels:
-      traefik.http.routers.grafana.rule: Host(`grafana.192.168.1.196`)
+      traefik.http.routers.grafana.rule: Host(`grafana.192.168.1.196.nip.io`)
     image: grafana/grafana
     depends_on:
       - prometheus
