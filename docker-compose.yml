@@ -5,44 +5,13 @@ volumes:
   grafana_data: {}
 
 networks:
-  monitor-net:
-    name: inbound
-  traefik:
-    name: traefik
+  front-tier:
+  back-tier:
 
 services:
-  traefik:
-    image: traefik:v1.7.12-alpine
-    command:
-      - "--logLevel=DEBUG"
-      - "--api"
-      - "--metrics"
-      - "--metrics.prometheus.buckets=0.1,0.3,1.2,5.0"
-      - "--docker"
-      - "--docker.swarmMode=false"
-      - "--docker.domain=docker.192.168.1.196.nip.io"
-      - "--docker.watch"
-    networks:
-      - traefik
-      - monitor-net
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    ports:
-      - target: 80
-        published: 80
-        mode: host
-      - target: 443
-        published: 443
-        mode: host
-      - target: 8080
-        published: 8080
-        protocol: tcp
-        mode: ingress
 
   prometheus:
-    labels:
-      traefik.http.routers.prometheus.rule: Host(`prometheus.192.168.1.196.nip.io`)
-    image: prom/prometheus
+    image: prom/prometheus:v2.1.0
     volumes:
       - ./prometheus/:/etc/prometheus/
       - prometheus_data:/prometheus
@@ -51,10 +20,22 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
-    networks:
-      - monitor-net
     ports:
       - 9090:9090
+    links:
+      - cadvisor:cadvisor
+      - alertmanager:alertmanager
+    #      - pushgateway:pushgateway
+    depends_on:
+      - cadvisor
+    #      - pushgateway
+    networks:
+      - back-tier
+    restart: always
+  #    deploy:
+  #      placement:
+  #        constraints:
+  #          - node.hostname == ${HOSTNAME}
 
   node-exporter:
     image: prom/node-exporter
@@ -70,8 +51,27 @@ services:
     ports:
       - 9100:9100
     networks:
-      - monitor-net
+      - back-tier
+    restart: always
+    deploy:
+      mode: global
 
+  alertmanager:
+    image: prom/alertmanager
+    ports:
+      - 9093:9093
+    volumes:
+      - ./alertmanager/:/etc/alertmanager/
+    networks:
+      - back-tier
+    restart: always
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+  #    deploy:
+  #      placement:
+  #        constraints:
+  #          - node.hostname == ${HOSTNAME}
   cadvisor:
     image: google/cadvisor
     volumes:
@@ -80,23 +80,36 @@ services:
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
     ports:
-      - 8088:8080
+      - 8080:8080
     networks:
-      - monitor-net
+      - back-tier
+    restart: always
+    deploy:
+      mode: global
 
   grafana:
-    labels:
-      traefik.http.routers.grafana.rule: Host(`grafana.192.168.1.196.nip.io`)
     image: grafana/grafana
+    user: "472"
     depends_on:
       - prometheus
+    ports:
+      - 3000:3000
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./config.monitoring/provisioning/:/etc/grafana/provisioning/
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
     env_file:
       - ./grafana/config.monitoring
     networks:
-      - monitor-net
-    user: "472"
-    ports:
-      - 3000:3000
+      - back-tier
+      - front-tier
+    restart: always
+
+#  pushgateway:
+#    image: prom/pushgateway
+#    restart: always
+#    expose:
+#      - 9091
+#    ports:
+#      - "9091:9091"
+#    networks:
+#      - back-tier
