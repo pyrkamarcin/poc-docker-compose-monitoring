@@ -96,3 +96,5 @@ services:
     networks:
       - monitor-net
     user: "472"
+    ports:
+      - 3000:3000
