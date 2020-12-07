@@ -6,10 +6,8 @@ volumes:
 
 networks:
   monitor-net:
-    driver: overlay
     name: inbound
   traefik:
-    driver: overlay
     name: traefik
 
 services:
