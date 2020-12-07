@@ -40,6 +40,8 @@ services:
         mode: ingress
 
   prometheus:
+    labels:
+      traefik.http.routers.prometheus.rule: Host(`prometheus.192.168.1.196`)
     image: prom/prometheus
     volumes:
       - ./prometheus/:/etc/prometheus/
@@ -81,6 +83,8 @@ services:
       - monitor-net
 
   grafana:
+    labels:
+      traefik.http.routers.grafana.rule: Host(`grafana.192.168.1.196`)
     image: grafana/grafana
     depends_on:
       - prometheus
